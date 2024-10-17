@@ -159,7 +159,7 @@ class SunSpecApiClient:
         """Check if the communication port (adapter) is available."""
         with self._lock:
             _LOGGER.error(
-                f"Check_Port: attempting to open adapter {self._adapter} with a {self._timeout}s timeout."
+                f"Check_Port: attempting to open adapter {self._adapter} with a 5s timeout."
             )
             try:
                 ser = serial.Serial(
