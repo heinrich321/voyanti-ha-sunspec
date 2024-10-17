@@ -90,7 +90,7 @@ class SunSpecModelWrapper:
 
 # pragma: not covered
 def progress(msg):
-    _LOGGER.debug(msg)
+    _LOGGER.error(msg)
     return True
 
 
@@ -102,7 +102,7 @@ class SunSpecApiClient:
     ) -> None:
         """Sunspec modbus client."""
 
-        _LOGGER.debug("New SunspecApi Client")
+        _LOGGER.error("New SunspecApi Client")
         self._adapter = adapter
         self._hass = hass
         self._slave_id = slave_id
@@ -113,7 +113,7 @@ class SunSpecApiClient:
     def get_client(self, config=None):
         cached = SunSpecApiClient.CLIENT_CACHE.get(self._client_key, None)
         if cached is None or config is not None:
-            _LOGGER.debug("Not using cached connection")
+            _LOGGER.error("Not using cached connection")
             cached = self.modbus_connect(config)
             SunSpecApiClient.CLIENT_CACHE[self._client_key] = cached
         if self._reconnect:
@@ -127,7 +127,7 @@ class SunSpecApiClient:
 
     async def async_get_data(self, model_id) -> SunSpecModelWrapper:
         try:
-            _LOGGER.debug("Get data for model %s", model_id)
+            _LOGGER.error("Get data for model %s", model_id)
             return await self.read(model_id)
         except SunSpecModbusClientTimeout as timeout_error:
             _LOGGER.warning("Async get data timeout")
@@ -143,7 +143,7 @@ class SunSpecApiClient:
         return await self.read(1)
 
     async def async_get_models(self, config=None) -> list:
-        _LOGGER.debug("Fetching models")
+        _LOGGER.error("Fetching models")
         client = await self.async_get_client(config)
         model_ids = sorted(list(filter(lambda m: type(m) is int, client.models.keys())))
         return model_ids
@@ -158,7 +158,7 @@ class SunSpecApiClient:
     def check_port(self) -> bool:
         """Check if the communication port (adapter) is available."""
         with self._lock:
-            _LOGGER.debug(
+            _LOGGER.error(
                 f"Check_Port: attempting to open adapter {self._adapter} with a {self._timeout}s timeout."
             )
             try:
@@ -169,16 +169,16 @@ class SunSpecApiClient:
                 )
                 if ser.is_open:
                     ser.close()
-                    _LOGGER.debug(
+                    _LOGGER.error(
                         f"Check_Port (SUCCESS): adapter {self._adapter} is open and available."
                     )
                     return True
                 else:
-                    _LOGGER.debug(
+                    _LOGGER.error(
                         f"Check_Port (ERROR): adapter {self._adapter} is not open."
                     )
             except serial.SerialException as e:
-                _LOGGER.debug(
+                _LOGGER.error(
                     f"Check_Port (ERROR): failed to open adapter {self._adapter} - error: {e}"
                 )
             return False
@@ -190,22 +190,22 @@ class SunSpecApiClient:
                 or {"adapter": self._adapter, "slave_id": self._slave_id}
             )
         )
-        _LOGGER.debug(
+        _LOGGER.error(
             f"Client connect to Adapter {use_config.adapter} slave id {use_config.slave_id} using timeout {TIMEOUT}"
         )
 
         client = modbus_client.SunSpecModbusClientDeviceRTU(slave_id=use_config.slave_id, name=use_config.adapter)
         
         if self.check_port():
-            _LOGGER.debug("Inverter ready for Modbus Serial connection")
+            _LOGGER.error("Inverter ready for Modbus Serial connection")
             try:
                 with self._lock:
                     client.connect()
                 if not client.is_connected():
                     raise ConnectionError(
-                        f"Failed to connect to {self._adapter}slave id {self._slave_id}"
+                        f"Failed to connect to {self._adapter} slave id {self._slave_id}"
                     )
-                _LOGGER.debug("Client connected, perform initial scan")
+                _LOGGER.error("Client connected, perform initial scan")
                 client.scan(
                     connect=False, progress=progress, full_model_read=False, delay=0.5
                 )
@@ -215,7 +215,7 @@ class SunSpecApiClient:
                     f"Failed to connect to {use_config._adapter} slave id {use_config.slave_id}"
                 )
         else:
-            _LOGGER.debug("Inverter not ready for Modbus Serial connection")
+            _LOGGER.error("Inverter not ready for Modbus Serial connection")
             raise ConnectionError(f"Inverter not active on {self._adapter}")
 
     def read_model(self, model_id) -> dict:
