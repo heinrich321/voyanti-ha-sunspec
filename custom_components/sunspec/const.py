@@ -2,9 +2,9 @@
 
 # Base component constants
 NAME = "Voyanti SunSpec"
-DOMAIN = "voyanti-sunspec"
+DOMAIN = "voyanti_sunspec"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.0.26"
+VERSION = "0.0.27"
 
 ATTRIBUTION = "Data provided by SunSpec alliance - https://sunspec.org"
 ISSUE_URL = "https://github.com/cjne/ha-sunspec/issues"
