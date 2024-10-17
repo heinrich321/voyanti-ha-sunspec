@@ -1,9 +1,9 @@
 """Sample API Client."""
 
 import logging
-import socket
 import threading
 import time
+import serial
 from types import SimpleNamespace
 
 from homeassistant.core import HomeAssistant
@@ -98,16 +98,15 @@ class SunSpecApiClient:
     CLIENT_CACHE = {}
 
     def __init__(
-        self, host: str, port: int, slave_id: int, hass: HomeAssistant
+        self, adapter: str, slave_id: int, hass: HomeAssistant
     ) -> None:
         """Sunspec modbus client."""
 
         _LOGGER.debug("New SunspecApi Client")
-        self._host = host
-        self._port = port
+        self._adapter = adapter
         self._hass = hass
         self._slave_id = slave_id
-        self._client_key = f"{host}:{port}:{slave_id}"
+        self._client_key = f"{adapter}:{slave_id}"
         self._lock = threading.Lock()
         self._reconnect = False
 
@@ -157,52 +156,54 @@ class SunSpecApiClient:
         client.close()
 
     def check_port(self) -> bool:
-        """Check if port is available"""
+        """Check if the communication port (adapter) is available."""
         with self._lock:
-            sock_timeout = float(3)
             _LOGGER.debug(
-                f"Check_Port: opening socket on {self._host}:{self._port} with a {sock_timeout}s timeout."
+                f"Check_Port: attempting to open adapter {self._adapter} with a {self._timeout}s timeout."
             )
-            socket.setdefaulttimeout(sock_timeout)
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock_res = sock.connect_ex((self._host, self._port))
-            is_open = sock_res == 0  # True if open, False if not
-            if is_open:
-                sock.shutdown(socket.SHUT_RDWR)
-                _LOGGER.debug(
-                    f"Check_Port (SUCCESS): port open on {self._host}:{self._port}"
+            try:
+                ser = serial.Serial(
+                    port=self._adapter,  # Changed from _port to _adapter
+                    baudrate=9600,
+                    timeout=5
                 )
-            else:
+                if ser.is_open:
+                    ser.close()
+                    _LOGGER.debug(
+                        f"Check_Port (SUCCESS): adapter {self._adapter} is open and available."
+                    )
+                    return True
+                else:
+                    _LOGGER.debug(
+                        f"Check_Port (ERROR): adapter {self._adapter} is not open."
+                    )
+            except serial.SerialException as e:
                 _LOGGER.debug(
-                    f"Check_Port (ERROR): port not available on {self._host}:{self._port} - error: {sock_res}"
+                    f"Check_Port (ERROR): failed to open adapter {self._adapter} - error: {e}"
                 )
-            sock.close()
-        return is_open
+            return False
 
     def modbus_connect(self, config=None):
         use_config = SimpleNamespace(
             **(
                 config
-                or {"host": self._host, "port": self._port, "slave_id": self._slave_id}
+                or {"adapter": self._adapter, "slave_id": self._slave_id}
             )
         )
         _LOGGER.debug(
-            f"Client connect to IP {use_config.host} port {use_config.port} slave id {use_config.slave_id} using timeout {TIMEOUT}"
+            f"Client connect to Adapter {use_config.adapter} slave id {use_config.slave_id} using timeout {TIMEOUT}"
         )
-        client = modbus_client.SunSpecModbusClientDeviceTCP(
-            slave_id=use_config.slave_id,
-            ipaddr=use_config.host,
-            ipport=use_config.port,
-            timeout=TIMEOUT,
-        )
+
+        client = modbus_client.SunSpecModbusClientDeviceRTU(slave_id=use_config.slave_id, name=config.adapter)
+        
         if self.check_port():
-            _LOGGER.debug("Inverter ready for Modbus TCP connection")
+            _LOGGER.debug("Inverter ready for Modbus Serial connection")
             try:
                 with self._lock:
                     client.connect()
                 if not client.is_connected():
                     raise ConnectionError(
-                        f"Failed to connect to {self._host}:{self._port} slave id {self._slave_id}"
+                        f"Failed to connect to {self._adapter}slave id {self._slave_id}"
                     )
                 _LOGGER.debug("Client connected, perform initial scan")
                 client.scan(
@@ -211,11 +212,11 @@ class SunSpecApiClient:
                 return client
             except ModbusClientError:
                 raise ConnectionError(
-                    f"Failed to connect to {use_config.host}:{use_config.port} slave id {use_config.slave_id}"
+                    f"Failed to connect to {use_config._adapter} slave id {use_config.slave_id}"
                 )
         else:
-            _LOGGER.debug("Inverter not ready for Modbus TCP connection")
-            raise ConnectionError(f"Inverter not active on {self._host}:{self._port}")
+            _LOGGER.debug("Inverter not ready for Modbus Serial connection")
+            raise ConnectionError(f"Inverter not active on {self._adapter}")
 
     def read_model(self, model_id) -> dict:
         client = self.get_client()

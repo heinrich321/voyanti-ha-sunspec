@@ -10,8 +10,7 @@ import voluptuous as vol
 from . import SCAN_INTERVAL
 from .api import SunSpecApiClient
 from .const import CONF_ENABLED_MODELS
-from .const import CONF_HOST
-from .const import CONF_PORT
+from .const import CONF_ADAPTER
 from .const import CONF_PREFIX
 from .const import CONF_SCAN_INTERVAL
 from .const import CONF_SLAVE_ID
@@ -35,17 +34,16 @@ class SunSpecFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle a flow initialized by the user."""
         self._errors = {}
         if user_input is not None:
-            host = user_input[CONF_HOST]
-            port = user_input[CONF_PORT]
+            adapter = user_input[CONF_ADAPTER]
             slave_id = user_input[CONF_SLAVE_ID]
-            valid = await self._test_connection(host, port, slave_id)
+            valid = await self._test_connection(adapter, slave_id)
             if valid:
                 uid = self._device_info.getValue("SN")
                 _LOGGER.debug(f"Sunspec device unique id: {uid}")
                 await self.async_set_unique_id(uid)
 
                 self._abort_if_unique_id_configured(
-                    updates={CONF_HOST: host, CONF_PORT: port, CONF_SLAVE_ID: slave_id}
+                    updates={CONF_ADAPTER: adapter, CONF_SLAVE_ID: slave_id}
                 )
                 self.init_info = user_input
                 return await self.async_step_settings()
@@ -64,12 +62,11 @@ class SunSpecFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             self.init_info[CONF_PREFIX] = user_input[CONF_PREFIX]
             self.init_info[CONF_ENABLED_MODELS] = user_input[CONF_ENABLED_MODELS]
             self.init_info[CONF_SCAN_INTERVAL] = user_input[CONF_SCAN_INTERVAL]
-            host = self.init_info[CONF_HOST]
-            port = self.init_info[CONF_PORT]
+            adapter = self.init_info[CONF_ADAPTER]
             slave_id = self.init_info[CONF_SLAVE_ID]
             _LOGGER.debug("Creating entry with data %s", self.init_info)
             return self.async_create_entry(
-                title=f"{host}:{port}:{slave_id}", data=self.init_info
+                title=f"{adapter}:{slave_id}", data=self.init_info
             )
 
         return await self._show_settings_form(user_input)
@@ -81,13 +78,12 @@ class SunSpecFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _show_config_form(self, user_input):  # pylint: disable=unused-argument
         """Show the configuration form to edit connection data."""
-        defaults = user_input or {CONF_HOST: "", CONF_PORT: 502, CONF_SLAVE_ID: 1}
+        defaults = user_input or {CONF_ADAPTER: "", CONF_SLAVE_ID: 1}
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_HOST, default=defaults[CONF_HOST]): str,
-                    vol.Required(CONF_PORT, default=defaults[CONF_PORT]): int,
+                    vol.Required(CONF_ADAPTER, default=defaults[CONF_ADAPTER]): str,
                     vol.Required(CONF_SLAVE_ID, default=defaults[CONF_SLAVE_ID]): int,
                 }
             ),
@@ -116,17 +112,17 @@ class SunSpecFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             errors=self._errors,
         )
 
-    async def _test_connection(self, host, port, slave_id):
+    async def _test_connection(self, adapter, slave_id):
         """Return true if credentials is valid."""
-        _LOGGER.debug(f"Test connection to {host}:{port} slave id {slave_id}")
+        _LOGGER.debug(f"Test connection to {adapter} slave id {slave_id}")
         try:
-            self.client = SunSpecApiClient(host, port, slave_id, self.hass)
+            self.client = SunSpecApiClient(adapter, slave_id, self.hass)
             self._device_info = await self.client.async_get_device_info()
             _LOGGER.info(self._device_info)
             return True
         except Exception as e:  # pylint: disable=broad-except
             _LOGGER.error(
-                "Failed to connect to host %s:%s slave %s - %s", host, port, slave_id, e
+                "Failed to connect to adapter %s slave %s - %s", adapter, slave_id, e
             )
             pass
         return False
@@ -160,16 +156,14 @@ class SunSpecOptionsFlowHandler(config_entries.OptionsFlow):
 
     async def show_settings_form(self, data=None, errors=None):
         settings = data or self.config_entry.data
-        host = settings.get(CONF_HOST)
-        port = settings.get(CONF_PORT)
+        adapter = settings.get(CONF_ADAPTER)
         slave_id = settings.get(CONF_SLAVE_ID)
 
         return self.async_show_form(
             step_id="host_options",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_HOST, default=host): str,
-                    vol.Required(CONF_PORT, default=port): int,
+                    vol.Required(CONF_ADAPTER, default=adapter): str,
                     vol.Required(CONF_SLAVE_ID, default=slave_id): int,
                 }
             ),
@@ -213,9 +207,8 @@ class SunSpecOptionsFlowHandler(config_entries.OptionsFlow):
             )
         except Exception as e:  # pylint: disable=broad-except
             _LOGGER.error(
-                "Failed to connect to host %s:%s slave %s - %s",
-                self.settings[CONF_HOST],
-                self.settings[CONF_PORT],
+                "Failed to connect to adapter %s slave %s - %s",
+                self.settings[CONF_ADAPTER],
                 self.settings[CONF_SLAVE_ID],
                 e,
             )
@@ -225,9 +218,8 @@ class SunSpecOptionsFlowHandler(config_entries.OptionsFlow):
 
     async def _update_options(self):
         """Update config entry options."""
-        # self.settings[CONF_PORT] = 503
         # self.settings[CONF_ENABLED_MODELS] = [160, 103]
-        title = f"{self.settings[CONF_HOST]}:{self.settings[CONF_PORT]}:{self.settings[CONF_SLAVE_ID]}"
+        title = f"{self.settings[CONF_ADAPTER]}:{self.settings[CONF_SLAVE_ID]}"
         _LOGGER.debug(
             "Saving config entry with title %s, data: %s options %s",
             title,

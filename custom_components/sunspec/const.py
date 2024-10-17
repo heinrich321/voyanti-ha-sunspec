@@ -1,8 +1,8 @@
 """Constants for SunSpec."""
 
 # Base component constants
-NAME = "SunSpec"
-DOMAIN = "sunspec"
+NAME = "Voyanti SunSpec"
+DOMAIN = "voyanti-sunspec"
 DOMAIN_DATA = f"{DOMAIN}_data"
 VERSION = "0.0.26"
 
@@ -22,8 +22,7 @@ PLATFORMS = [SENSOR]
 
 # Configuration and options
 CONF_ENABLED = "enabled"
-CONF_HOST = "host"
-CONF_PORT = "port"
+CONF_ADAPTER = "adapter"
 CONF_SLAVE_ID = "slave_id"
 CONF_PREFIX = "prefix"
 CONF_SCAN_INTERVAL = "scan_interval"

@@ -1,6 +1,6 @@
 {
-  "domain": "sunspec",
-  "name": "SunSpec",
+  "domain": "voyanti-sunspec",
+  "name": "Voyanti SunSpec",
   "codeowners": ["@cjne"],
   "config_flow": true,
   "dependencies": [],
