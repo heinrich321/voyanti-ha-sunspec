@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 import sunspec2.modbus.client as modbus_client
 from sunspec2.modbus.client import SunSpecModbusClientException
 from sunspec2.modbus.client import SunSpecModbusClientTimeout
-from sunspec2.modbus.modbus import ModbusClientError, ModbusTimeoutError
+from sunspec2.modbus.modbus import ModbusClientError
 
 TIMEOUT = 120
 
@@ -210,11 +210,6 @@ class SunSpecApiClient:
                     connect=False, progress=progress, full_model_read=False, delay=0.5
                 )
                 return client
-            except ModbusTimeoutError as e:
-                _LOGGER.error(f"Timeout occurred during scan: {e}")
-                raise ConnectionError(
-                    f"Failed to connect to {use_config._adapter} slave id {use_config.slave_id}"
-                )
             except ModbusClientError as e:
                 _LOGGER.error(f"Modbus client error during scan: {e}")
                 raise ConnectionError(
