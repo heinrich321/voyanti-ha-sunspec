@@ -194,7 +194,7 @@ class SunSpecApiClient:
             f"Client connect to Adapter {use_config.adapter} slave id {use_config.slave_id} using timeout {TIMEOUT}"
         )
 
-        client = modbus_client.SunSpecModbusClientDeviceRTU(slave_id=use_config.slave_id, name=config.adapter)
+        client = modbus_client.SunSpecModbusClientDeviceRTU(slave_id=use_config.slave_id, name=use_config.adapter)
         
         if self.check_port():
             _LOGGER.debug("Inverter ready for Modbus Serial connection")
