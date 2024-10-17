@@ -7,6 +7,6 @@
   "documentation": "https://github.com/cjne/ha-sunspec",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/cjne/ha-sunspec/issues",
-  "requirements": ["pysunspec2==1.1.5,pySerial"],
-  "version": "0.0.35"
+  "requirements": ["pysunspec2==1.1.5"],
+  "version": "0.0.36"
 }
