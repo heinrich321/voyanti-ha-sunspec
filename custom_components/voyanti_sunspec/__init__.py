@@ -17,7 +17,7 @@ from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from .api import SunSpecApiClient
 from .const import CONF_ENABLED_MODELS
-from .const import CONF_HOST
+from .const import CONF_ADAPTER
 from .const import CONF_SCAN_INTERVAL
 from .const import CONF_SLAVE_ID
 from .const import DEFAULT_MODELS
@@ -41,11 +41,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data.setdefault(DOMAIN, {})
         _LOGGER.info(STARTUP_MESSAGE)
 
-    host = entry.data.get(CONF_HOST)
-    port = entry.data.get(CONF_PORT)
+    adapter = entry.data.get(CONF_ADAPTER)
     slave_id = entry.data.get(CONF_SLAVE_ID, 1)
 
-    client = SunSpecApiClient(host, port, slave_id, hass)
+    client = SunSpecApiClient(adapter, slave_id, hass)
 
     _LOGGER.debug("Setup conifg entry for SunSpec")
     coordinator = SunSpecDataUpdateCoordinator(hass, client=client, entry=entry)
