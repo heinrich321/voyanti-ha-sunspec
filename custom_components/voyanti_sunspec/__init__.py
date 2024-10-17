@@ -18,7 +18,6 @@ from homeassistant.helpers.update_coordinator import UpdateFailed
 from .api import SunSpecApiClient
 from .const import CONF_ENABLED_MODELS
 from .const import CONF_HOST
-from .const import CONF_PORT
 from .const import CONF_SCAN_INTERVAL
 from .const import CONF_SLAVE_ID
 from .const import DEFAULT_MODELS
@@ -115,8 +114,7 @@ class SunSpecDataUpdateCoordinator(DataUpdateCoordinator):
             "Setup entry with models %s, scan interval %s. IP: %s Port: %s ID: %s",
             self.option_model_filter,
             scan_interval,
-            entry.data.get(CONF_HOST),
-            entry.data.get(CONF_PORT),
+            entry.data.get(CONF_ADAPTER),
             entry.data.get(CONF_SLAVE_ID),
         )
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=scan_interval)
